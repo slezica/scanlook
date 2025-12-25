@@ -3,9 +3,11 @@ import * as pdfjs from "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.449/build/pd
 pdfjs.GlobalWorkerOptions.workerSrc =
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.449/build/pdf.worker.min.mjs";
 
+let pdfBytes = null
 
 const dropZone = document.getElementById('drop-zone')
 const fileInput = document.getElementById('file-input')
+const downloadBtn = document.getElementById('download-btn')
 
 
 dropZone.addEventListener('click', () => {
@@ -22,22 +24,39 @@ dropZone.addEventListener('dragleave', ev => {
 })
 
 dropZone.addEventListener('drop', ev => {
-  e.preventDefault()
+  ev.preventDefault()
   dropZone.classList.remove('drag-over')
 
-  const files = e.dataTransfer.files
+  const files = ev.dataTransfer.files
   if (files.length > 0) {
     handleFile(files[0])
   }
 })
 
 fileInput.addEventListener('change', ev => {
-  if (e.target.files.length > 0) {
-    handleFile(e.target.files[0])
+  if (ev.target.files.length > 0) {
+    handleFile(ev.target.files[0])
   }
 })
 
-function handleFile(file) {
+async function handleFile(file) {
   console.log('File selected:', file.name)
-  // TODO: Process PDF
+
+  const arrayBuffer = await file.arrayBuffer()
+  pdfBytes = new Uint8Array(arrayBuffer)
+
+  downloadBtn.style.display = 'block'
+  console.log('PDF bytes stored:', pdfBytes.length)
 }
+
+downloadBtn.addEventListener('click', () => {
+  if (!pdfBytes) return
+
+  const blob = new Blob([pdfBytes], { type: 'application/pdf' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'processed.pdf'
+  a.click()
+  URL.revokeObjectURL(url)
+})
