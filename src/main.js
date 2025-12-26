@@ -7,7 +7,9 @@ pdfjs.GlobalWorkerOptions.workerSrc =
 
 const state = {
   file: null,
-  rotationAngle: 0
+  rotationAngle: 0,
+  coarseNoise: 0.4,
+  fineNoise: 0.03
 }
 
 const ui = {
@@ -16,7 +18,11 @@ const ui = {
   fileInput: document.getElementById('file-input'),
   downloadBtn: document.getElementById('download-btn'),
   rotationSlider: document.getElementById('rotation-slider'),
-  rotationValue: document.getElementById('rotation-value')
+  rotationValue: document.getElementById('rotation-value'),
+  coarseNoiseSlider: document.getElementById('coarse-noise-slider'),
+  coarseNoiseValue: document.getElementById('coarse-noise-value'),
+  fineNoiseSlider: document.getElementById('fine-noise-slider'),
+  fineNoiseValue: document.getElementById('fine-noise-value')
 }
 
 
@@ -24,6 +30,26 @@ const ui = {
 ui.rotationSlider.addEventListener('input', ev => {
   state.rotationAngle = parseFloat(ev.target.value)
   ui.rotationValue.textContent = state.rotationAngle.toFixed(1)
+
+  if (state.file) {
+    generatePreviews(state.file)
+  }
+})
+
+// Coarse noise slider
+ui.coarseNoiseSlider.addEventListener('input', ev => {
+  state.coarseNoise = parseFloat(ev.target.value)
+  ui.coarseNoiseValue.textContent = state.coarseNoise.toFixed(2)
+
+  if (state.file) {
+    generatePreviews(state.file)
+  }
+})
+
+// Fine noise slider
+ui.fineNoiseSlider.addEventListener('input', ev => {
+  state.fineNoise = parseFloat(ev.target.value)
+  ui.fineNoiseValue.textContent = state.fineNoise.toFixed(3)
 
   if (state.file) {
     generatePreviews(state.file)
@@ -180,8 +206,8 @@ async function processPage(page) {
   const processedCanvas = createRotatedCanvas(canvas)
 
   // Apply filters:
-  applyMultiplicativeNoise(processedCanvas, 0.4)
-  applyMultiplicativeNoise(processedCanvas, 0.03)
+  applyMultiplicativeNoise(processedCanvas, state.coarseNoise)
+  applyMultiplicativeNoise(processedCanvas, state.fineNoise)
   applySharpen(processedCanvas, 1.0)
   applyGrayscale(processedCanvas)
 
