@@ -9,7 +9,8 @@ const state = {
   file: null,
   rotationAngle: 0,
   coarseNoise: 0.4,
-  fineNoise: 0.03
+  fineNoise: 0.03,
+  sharpen: 1.0
 }
 
 const ui = {
@@ -22,7 +23,9 @@ const ui = {
   coarseNoiseSlider: document.getElementById('coarse-noise-slider'),
   coarseNoiseValue: document.getElementById('coarse-noise-value'),
   fineNoiseSlider: document.getElementById('fine-noise-slider'),
-  fineNoiseValue: document.getElementById('fine-noise-value')
+  fineNoiseValue: document.getElementById('fine-noise-value'),
+  sharpenSlider: document.getElementById('sharpen-slider'),
+  sharpenValue: document.getElementById('sharpen-value')
 }
 
 
@@ -50,6 +53,16 @@ ui.coarseNoiseSlider.addEventListener('input', ev => {
 ui.fineNoiseSlider.addEventListener('input', ev => {
   state.fineNoise = parseFloat(ev.target.value)
   ui.fineNoiseValue.textContent = state.fineNoise.toFixed(3)
+
+  if (state.file) {
+    generatePreviews(state.file)
+  }
+})
+
+// Sharpen slider
+ui.sharpenSlider.addEventListener('input', ev => {
+  state.sharpen = parseFloat(ev.target.value)
+  ui.sharpenValue.textContent = state.sharpen.toFixed(1)
 
   if (state.file) {
     generatePreviews(state.file)
@@ -208,7 +221,7 @@ async function processPage(page) {
   // Apply filters:
   applyMultiplicativeNoise(processedCanvas, state.coarseNoise)
   applyMultiplicativeNoise(processedCanvas, state.fineNoise)
-  applySharpen(processedCanvas, 1.0)
+  applySharpen(processedCanvas, state.sharpen)
   applyGrayscale(processedCanvas)
 
   return {
@@ -263,16 +276,19 @@ function applyMultiplicativeNoise(canvas, attenuate) {
 
 
 function applySharpen(canvas, amount) {
+  if (amount === 0) return
+
   const ctx = canvas.getContext('2d')
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
   const data = imageData.data
   const w = canvas.width
   const h = canvas.height
 
+  // Scale kernel by amount
   const kernel = [
-     0, -1,  0,
-    -1,  5, -1,
-     0, -1,  0
+     0,          -1 * amount,  0,
+    -1 * amount,  1 + 4 * amount, -1 * amount,
+     0,          -1 * amount,  0
   ]
 
   const output = new Uint8ClampedArray(data.length)
