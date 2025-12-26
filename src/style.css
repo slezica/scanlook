@@ -144,9 +144,19 @@ html, body {
   transition: background 0.2s;
 }
 
-#drop-zone-overlay p {
+.drop-zone-text {
+  text-align: center;
+}
+
+.drop-zone-main {
   font-size: 1.25rem;
   color: #999;
+  margin-bottom: 8px;
+}
+
+.drop-zone-subtitle {
+  font-size: 1rem;
+  color: #aaa;
 }
 
 #preview-area.drag-over #drop-zone-overlay {
@@ -154,9 +164,13 @@ html, body {
   pointer-events: none;
 }
 
-#preview-area.drag-over #drop-zone-overlay p {
+#preview-area.drag-over .drop-zone-main {
   color: #007aff;
   font-weight: 600;
+}
+
+#preview-area.drag-over .drop-zone-subtitle {
+  color: #007aff;
 }
 
 #preview-area.has-content #drop-zone-overlay {
