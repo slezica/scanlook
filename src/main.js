@@ -30,44 +30,47 @@ const ui = {
 }
 
 
+function debounce(func, delay) {
+  let timeoutId
+  return function(...args) {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => func.apply(this, args), delay)
+  }
+}
+
+const debouncedUpdatePreviews = debounce(() => {
+  if (state.rawPages.length > 0) {
+    updatePreviews()
+  }
+}, 300)
+
+
 // Rotation slider
 ui.rotationSlider.addEventListener('input', ev => {
   state.rotationAngle = parseFloat(ev.target.value)
   ui.rotationValue.textContent = state.rotationAngle.toFixed(1)
-
-  if (state.rawPages.length > 0) {
-    updatePreviews()
-  }
+  debouncedUpdatePreviews()
 })
 
 // Coarse noise slider
 ui.coarseNoiseSlider.addEventListener('input', ev => {
   state.coarseNoise = parseFloat(ev.target.value)
   ui.coarseNoiseValue.textContent = state.coarseNoise.toFixed(2)
-
-  if (state.rawPages.length > 0) {
-    updatePreviews()
-  }
+  debouncedUpdatePreviews()
 })
 
 // Fine noise slider
 ui.fineNoiseSlider.addEventListener('input', ev => {
   state.fineNoise = parseFloat(ev.target.value)
   ui.fineNoiseValue.textContent = state.fineNoise.toFixed(3)
-
-  if (state.rawPages.length > 0) {
-    updatePreviews()
-  }
+  debouncedUpdatePreviews()
 })
 
 // Sharpen slider
 ui.sharpenSlider.addEventListener('input', ev => {
   state.sharpen = parseFloat(ev.target.value)
   ui.sharpenValue.textContent = state.sharpen.toFixed(1)
-
-  if (state.rawPages.length > 0) {
-    updatePreviews()
-  }
+  debouncedUpdatePreviews()
 })
 
 // Click anywhere to select file
