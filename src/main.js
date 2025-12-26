@@ -9,8 +9,7 @@ const state = {
   file: null,
   rawPages: [],
   rotationAngle: 0,
-  coarseNoise: 0.4,
-  fineNoise: 0.03,
+  noise: 0.03,
   sharpen: 1.0
 }
 
@@ -21,10 +20,8 @@ const ui = {
   downloadBtn: document.getElementById('download-btn'),
   rotationSlider: document.getElementById('rotation-slider'),
   rotationValue: document.getElementById('rotation-value'),
-  coarseNoiseSlider: document.getElementById('coarse-noise-slider'),
-  coarseNoiseValue: document.getElementById('coarse-noise-value'),
-  fineNoiseSlider: document.getElementById('fine-noise-slider'),
-  fineNoiseValue: document.getElementById('fine-noise-value'),
+  noiseSlider: document.getElementById('noise-slider'),
+  noiseValue: document.getElementById('noise-value'),
   sharpenSlider: document.getElementById('sharpen-slider'),
   sharpenValue: document.getElementById('sharpen-value')
 }
@@ -52,17 +49,10 @@ ui.rotationSlider.addEventListener('input', ev => {
   debouncedUpdatePreviews()
 })
 
-// Coarse noise slider
-ui.coarseNoiseSlider.addEventListener('input', ev => {
-  state.coarseNoise = parseFloat(ev.target.value)
-  ui.coarseNoiseValue.textContent = state.coarseNoise.toFixed(2)
-  debouncedUpdatePreviews()
-})
-
-// Fine noise slider
-ui.fineNoiseSlider.addEventListener('input', ev => {
-  state.fineNoise = parseFloat(ev.target.value)
-  ui.fineNoiseValue.textContent = state.fineNoise.toFixed(3)
+// Noise slider
+ui.noiseSlider.addEventListener('input', ev => {
+  state.noise = parseFloat(ev.target.value)
+  ui.noiseValue.textContent = state.noise.toFixed(3)
   debouncedUpdatePreviews()
 })
 
@@ -262,8 +252,7 @@ function applyEffects(canvas) {
   ctx.drawImage(rotatedCanvas, 0, 0)
 
   // Apply filters to canvas
-  applyMultiplicativeNoise(canvas, state.coarseNoise)
-  applyMultiplicativeNoise(canvas, state.fineNoise)
+  applyMultiplicativeNoise(canvas, state.noise)
   applySharpen(canvas, state.sharpen)
   applyGrayscale(canvas)
 }
