@@ -8,7 +8,7 @@ pdfjs.GlobalWorkerOptions.workerSrc =
 const state = {
   file: null,
   rawPages: [],
-  rotationAngle: 0,
+  rotationAngle: 0.3,
   noise: 0.03,
   sharpen: 1.0
 }
@@ -262,14 +262,14 @@ function createRotatedCanvas(canvas) {
   const degrees = state.rotationAngle
   const radians = degrees * Math.PI / 180
 
-  // Create new canvas with padding to avoid clipping:
-  const padding = Math.max(canvas.width, canvas.height) * 0.1
+  // Create new canvas with minimal padding to avoid clipping (2% for small rotations)
+  const padding = Math.max(canvas.width, canvas.height) * 0.02
   const newCanvas = document.createElement('canvas')
   newCanvas.width = canvas.width + padding * 2
   newCanvas.height = canvas.height + padding * 2
   const ctx = newCanvas.getContext('2d')
 
-  // Fill background:
+  // Fill background (white paper)
   ctx.fillStyle = '#ffffff'
   ctx.fillRect(0, 0, newCanvas.width, newCanvas.height)
 
