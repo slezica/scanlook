@@ -155,17 +155,14 @@ html, body {
 }
 
 .page-preview {
-  background: white;
-  border-radius: 8px;
-  padding: 24px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 0;
 }
 
 .page-preview h3 {
   font-size: 0.875rem;
   font-weight: 600;
   color: #666;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .preview-comparison {
