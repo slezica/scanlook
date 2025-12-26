@@ -51,15 +51,21 @@ ui.rotationSlider.addEventListener('input', ev => {
 
 // Noise slider
 ui.noiseSlider.addEventListener('input', ev => {
-  state.noise = parseFloat(ev.target.value)
-  ui.noiseValue.textContent = state.noise.toFixed(3)
+  const value = parseFloat(ev.target.value)
+  ui.noiseValue.textContent = value.toFixed(3)
+  
+  state.noise = 0.2 * value
+
   debouncedUpdatePreviews()
 })
 
 // Sharpen slider
 ui.sharpenSlider.addEventListener('input', ev => {
-  state.sharpen = parseFloat(ev.target.value)
-  ui.sharpenValue.textContent = state.sharpen.toFixed(1)
+  const sharpen = parseFloat(ev.target.value)
+  ui.sharpenValue.textContent = sharpen.toFixed(1)
+
+  state.sharpen = 2 * sharpen
+
   debouncedUpdatePreviews()
 })
 
