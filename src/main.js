@@ -7,6 +7,7 @@ pdfjs.GlobalWorkerOptions.workerSrc =
 
 const state = {
   file: null,
+  rawPages: [],
   rotationAngle: 0,
   coarseNoise: 0.4,
   fineNoise: 0.03,
@@ -34,8 +35,8 @@ ui.rotationSlider.addEventListener('input', ev => {
   state.rotationAngle = parseFloat(ev.target.value)
   ui.rotationValue.textContent = state.rotationAngle.toFixed(1)
 
-  if (state.file) {
-    generatePreviews(state.file)
+  if (state.rawPages.length > 0) {
+    updatePreviews()
   }
 })
 
@@ -44,8 +45,8 @@ ui.coarseNoiseSlider.addEventListener('input', ev => {
   state.coarseNoise = parseFloat(ev.target.value)
   ui.coarseNoiseValue.textContent = state.coarseNoise.toFixed(2)
 
-  if (state.file) {
-    generatePreviews(state.file)
+  if (state.rawPages.length > 0) {
+    updatePreviews()
   }
 })
 
@@ -54,8 +55,8 @@ ui.fineNoiseSlider.addEventListener('input', ev => {
   state.fineNoise = parseFloat(ev.target.value)
   ui.fineNoiseValue.textContent = state.fineNoise.toFixed(3)
 
-  if (state.file) {
-    generatePreviews(state.file)
+  if (state.rawPages.length > 0) {
+    updatePreviews()
   }
 })
 
@@ -64,8 +65,8 @@ ui.sharpenSlider.addEventListener('input', ev => {
   state.sharpen = parseFloat(ev.target.value)
   ui.sharpenValue.textContent = state.sharpen.toFixed(1)
 
-  if (state.file) {
-    generatePreviews(state.file)
+  if (state.rawPages.length > 0) {
+    updatePreviews()
   }
 })
 
@@ -100,40 +101,61 @@ ui.fileInput.addEventListener('change', ev => {
 })
 
 ui.downloadBtn.addEventListener('click', async () => {
-  if (!state.file) return
-  const outputPdf = await processFile(state.file)
+  if (state.rawPages.length === 0) return
+  const outputPdf = await generateDownloadPdf()
   outputPdf.save('processed.pdf')
 })
 
 
 async function handleFileSelected(file) {
   state.file = file
-  ui.downloadBtn.disabled = (file == null)
+  ui.downloadBtn.disabled = true
 
   if (file) {
     ui.previewArea.classList.add('has-content')
-    await generatePreviews(file)
+    await loadFile(file)
+    initializePreviewDOM()
+    updatePreviews()
+    ui.downloadBtn.disabled = false
   }
 }
 
 
-async function generatePreviews(file) {
-  ui.previewContainer.innerHTML = ''
-
+async function loadFile(file) {
   const fileBuffer = await file.arrayBuffer()
   const fileBytes = new Uint8Array(fileBuffer)
   const inputPdf = await pdfjs.getDocument({ data: fileBytes }).promise
 
+  if (inputPdf.numPages == 0) {
+    throw new Error("Zero pages in PDF")
+  }
+
+  state.rawPages = []
+
   for (let i = 0; i < inputPdf.numPages; i++) {
-    const inputPage = await inputPdf.getPage(i + 1)
+    const page = await inputPdf.getPage(i + 1)
+    const viewport = page.getViewport({ scale: 4.0 })
 
-    // Generate before image (original)
-    const beforeImage = await renderPageOriginal(inputPage)
+    const canvas = document.createElement('canvas')
+    const context = canvas.getContext('2d')
+    canvas.width = viewport.width
+    canvas.height = viewport.height
 
-    // Generate after image (with scanning effects)
-    const afterImage = await processPage(inputPage)
+    await page.render({ canvasContext: context, viewport }).promise
 
-    // Create preview element
+    state.rawPages.push({
+      canvas: canvas,
+      baseWidth: page.getViewport({ scale: 1.0 }).width,
+      baseHeight: page.getViewport({ scale: 1.0 }).height
+    })
+  }
+}
+
+
+function initializePreviewDOM() {
+  ui.previewContainer.innerHTML = ''
+
+  for (let i = 0; i < state.rawPages.length; i++) {
     const pageEl = document.createElement('div')
     pageEl.className = 'page-preview'
     pageEl.innerHTML = `
@@ -141,11 +163,11 @@ async function generatePreviews(file) {
       <div class="preview-comparison">
         <div class="preview-item">
           <label>Before</label>
-          <img src="${beforeImage}" alt="Before">
+          <img class="before-img" alt="Before">
         </div>
         <div class="preview-item">
           <label>After</label>
-          <img src="${afterImage.image}" alt="After">
+          <img class="after-img" alt="After">
         </div>
       </div>
     `
@@ -155,80 +177,92 @@ async function generatePreviews(file) {
 }
 
 
-async function renderPageOriginal(page) {
-  const viewport = page.getViewport({ scale: 2.0 })
-  const canvas = document.createElement('canvas')
-  const context = canvas.getContext('2d')
-  canvas.width = viewport.width
-  canvas.height = viewport.height
+function updatePreviews() {
+  const pageElements = ui.previewContainer.querySelectorAll('.page-preview')
 
-  await page.render({ canvasContext: context, viewport }).promise
+  for (let i = 0; i < state.rawPages.length; i++) {
+    const rawPage = state.rawPages[i]
+    const pageEl = pageElements[i]
 
-  return canvas.toDataURL('image/png')
+    // Update before image (original, downscaled for preview)
+    const beforeCanvas = createPreviewCanvas(rawPage.canvas)
+    const beforeImg = pageEl.querySelector('.before-img')
+    beforeImg.src = beforeCanvas.toDataURL('image/png')
+
+    // Update after image (with effects, downscaled for preview)
+    const afterCanvas = createPreviewCanvas(rawPage.canvas)
+    applyEffects(afterCanvas)
+    const afterImg = pageEl.querySelector('.after-img')
+    afterImg.src = afterCanvas.toDataURL('image/png')
+  }
 }
 
 
-async function processFile(file) {
-  const fileBuffer = await file.arrayBuffer()
-  const fileBytes = new Uint8Array(fileBuffer)
+function createPreviewCanvas(sourceCanvas) {
+  // Create a lower-res copy for preview (2x scale instead of 4x)
+  const scale = 0.5
+  const canvas = document.createElement('canvas')
+  canvas.width = sourceCanvas.width * scale
+  canvas.height = sourceCanvas.height * scale
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(sourceCanvas, 0, 0, canvas.width, canvas.height)
+  return canvas
+}
 
-  const inputPdf = await pdfjs.getDocument({ data: fileBytes }).promise
 
-  if (inputPdf.numPages == 0) {
-    throw new Error("Zero pages in PDF")
-  }
-
+async function generateDownloadPdf() {
   let outputPdf
 
-  for (let i = 0; i < inputPdf.numPages; i++) {
-    const inputPage = await inputPdf.getPage(i + 1) // pdf pages are 1-indexed
-    const outputPage = await processPage(inputPage)
+  for (let i = 0; i < state.rawPages.length; i++) {
+    const rawPage = state.rawPages[i]
 
-    const { width, height } = outputPage
+    // Clone the full-resolution canvas
+    const processedCanvas = cloneCanvas(rawPage.canvas)
+    applyEffects(processedCanvas)
+
+    const { baseWidth, baseHeight } = rawPage
 
     if (i == 0) {
       outputPdf = new jsPDF({
-        orientation: width > height ? 'landscape' : 'portrait',
+        orientation: baseWidth > baseHeight ? 'landscape' : 'portrait',
         unit: 'px',
-        format: [width, height]
+        format: [baseWidth, baseHeight]
       })
     } else {
-      outputPdf.addPage([width, height])
+      outputPdf.addPage([baseWidth, baseHeight])
     }
 
-    outputPdf.addImage(outputPage.image, 'PNG', 0, 0, width, height)
+    outputPdf.addImage(processedCanvas.toDataURL('image/png'), 'PNG', 0, 0, baseWidth, baseHeight)
   }
 
   return outputPdf
 }
 
 
-async function processPage(page) {
-  const baseViewport = page.getViewport({ scale: 1.0 })
-  const renderViewport = page.getViewport({ scale: 4.0 }) // picked visually, blurry otherwise
-
-  // Create canvas and render page:
+function cloneCanvas(sourceCanvas) {
   const canvas = document.createElement('canvas')
-  const context = canvas.getContext('2d')
-  canvas.width = renderViewport.width
-  canvas.height = renderViewport.height
+  canvas.width = sourceCanvas.width
+  canvas.height = sourceCanvas.height
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(sourceCanvas, 0, 0)
+  return canvas
+}
 
-  await page.render({ canvasContext: context, viewport: renderViewport }).promise
 
-  // Create new canvas with padding and rotation:
-  const processedCanvas = createRotatedCanvas(canvas)
+function applyEffects(canvas) {
+  const rotatedCanvas = createRotatedCanvas(canvas)
 
-  // Apply filters:
-  applyMultiplicativeNoise(processedCanvas, state.coarseNoise)
-  applyMultiplicativeNoise(processedCanvas, state.fineNoise)
-  applySharpen(processedCanvas, state.sharpen)
-  applyGrayscale(processedCanvas)
+  // Copy rotated result back to original canvas
+  canvas.width = rotatedCanvas.width
+  canvas.height = rotatedCanvas.height
+  const ctx = canvas.getContext('2d')
+  ctx.drawImage(rotatedCanvas, 0, 0)
 
-  return {
-    image: processedCanvas.toDataURL('image/png'),
-    width: baseViewport.width,
-    height: baseViewport.height
-  }
+  // Apply filters to canvas
+  applyMultiplicativeNoise(canvas, state.coarseNoise)
+  applyMultiplicativeNoise(canvas, state.fineNoise)
+  applySharpen(canvas, state.sharpen)
+  applyGrayscale(canvas)
 }
 
 
