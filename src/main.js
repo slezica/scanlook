@@ -167,16 +167,7 @@ function initializePreviewDOM() {
     pageEl.className = 'page-preview'
     pageEl.innerHTML = `
       <h3>Page ${i + 1}</h3>
-      <div class="preview-comparison">
-        <div class="preview-item">
-          <label>Before</label>
-          <img class="before-img" alt="Before">
-        </div>
-        <div class="preview-item">
-          <label>After</label>
-          <img class="after-img" alt="After">
-        </div>
-      </div>
+      <img class="preview-img" alt="Page ${i + 1}">
     `
 
     ui.previewContainer.appendChild(pageEl)
@@ -191,16 +182,11 @@ function updatePreviews() {
     const rawPage = state.rawPages[i]
     const pageEl = pageElements[i]
 
-    // Update before image (original, downscaled for preview)
-    const beforeCanvas = createPreviewCanvas(rawPage.canvas)
-    const beforeImg = pageEl.querySelector('.before-img')
-    beforeImg.src = beforeCanvas.toDataURL('image/png')
-
-    // Update after image (with effects, downscaled for preview)
-    const afterCanvas = createPreviewCanvas(rawPage.canvas)
-    applyEffects(afterCanvas)
-    const afterImg = pageEl.querySelector('.after-img')
-    afterImg.src = afterCanvas.toDataURL('image/png')
+    // Update transformed image (downscaled for preview)
+    const canvas = createPreviewCanvas(rawPage.canvas)
+    applyEffects(canvas)
+    const img = pageEl.querySelector('.preview-img')
+    img.src = canvas.toDataURL('image/png')
   }
 }
 
