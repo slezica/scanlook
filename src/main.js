@@ -6,32 +6,48 @@ pdfjs.GlobalWorkerOptions.workerSrc =
 
 
 const state = {
-  file: null
+  file: null,
+  rotationAngle: 0
 }
 
 const ui = {
-  dropZone: document.getElementById('drop-zone'),
+  previewArea: document.getElementById('preview-area'),
+  previewContainer: document.getElementById('preview-container'),
   fileInput: document.getElementById('file-input'),
-  downloadBtn: document.getElementById('download-btn')
+  downloadBtn: document.getElementById('download-btn'),
+  rotationSlider: document.getElementById('rotation-slider'),
+  rotationValue: document.getElementById('rotation-value')
 }
 
 
-ui.dropZone.addEventListener('click', () => {
+// Rotation slider
+ui.rotationSlider.addEventListener('input', ev => {
+  state.rotationAngle = parseFloat(ev.target.value)
+  ui.rotationValue.textContent = state.rotationAngle.toFixed(1)
+
+  if (state.file) {
+    generatePreviews(state.file)
+  }
+})
+
+// Click anywhere to select file
+ui.previewArea.addEventListener('click', () => {
   ui.fileInput.click()
 })
 
-ui.dropZone.addEventListener('dragover', ev => {
+// Drag and drop
+ui.previewArea.addEventListener('dragover', ev => {
   ev.preventDefault()
-  ui.dropZone.classList.add('drag-over')
+  ui.previewArea.classList.add('drag-over')
 })
 
-ui.dropZone.addEventListener('dragleave', ev => {
-  ui.dropZone.classList.remove('drag-over')
+ui.previewArea.addEventListener('dragleave', ev => {
+  ui.previewArea.classList.remove('drag-over')
 })
 
-ui.dropZone.addEventListener('drop', ev => {
+ui.previewArea.addEventListener('drop', ev => {
   ev.preventDefault()
-  ui.dropZone.classList.remove('drag-over')
+  ui.previewArea.classList.remove('drag-over')
 
   if (ev.dataTransfer.files.length > 0) {
     handleFileSelected(ev.dataTransfer.files[0])
@@ -51,9 +67,65 @@ ui.downloadBtn.addEventListener('click', async () => {
 })
 
 
-function handleFileSelected(file) {
+async function handleFileSelected(file) {
   state.file = file
   ui.downloadBtn.disabled = (file == null)
+
+  if (file) {
+    ui.previewArea.classList.add('has-content')
+    await generatePreviews(file)
+  }
+}
+
+
+async function generatePreviews(file) {
+  ui.previewContainer.innerHTML = ''
+
+  const fileBuffer = await file.arrayBuffer()
+  const fileBytes = new Uint8Array(fileBuffer)
+  const inputPdf = await pdfjs.getDocument({ data: fileBytes }).promise
+
+  for (let i = 0; i < inputPdf.numPages; i++) {
+    const inputPage = await inputPdf.getPage(i + 1)
+
+    // Generate before image (original)
+    const beforeImage = await renderPageOriginal(inputPage)
+
+    // Generate after image (with scanning effects)
+    const afterImage = await processPage(inputPage)
+
+    // Create preview element
+    const pageEl = document.createElement('div')
+    pageEl.className = 'page-preview'
+    pageEl.innerHTML = `
+      <h3>Page ${i + 1}</h3>
+      <div class="preview-comparison">
+        <div class="preview-item">
+          <label>Before</label>
+          <img src="${beforeImage}" alt="Before">
+        </div>
+        <div class="preview-item">
+          <label>After</label>
+          <img src="${afterImage.image}" alt="After">
+        </div>
+      </div>
+    `
+
+    ui.previewContainer.appendChild(pageEl)
+  }
+}
+
+
+async function renderPageOriginal(page) {
+  const viewport = page.getViewport({ scale: 2.0 })
+  const canvas = document.createElement('canvas')
+  const context = canvas.getContext('2d')
+  canvas.width = viewport.width
+  canvas.height = viewport.height
+
+  await page.render({ canvasContext: context, viewport }).promise
+
+  return canvas.toDataURL('image/png')
 }
 
 
@@ -122,9 +194,7 @@ async function processPage(page) {
 
 
 function createRotatedCanvas(canvas) {
-  // Random rotation, +/- 0.5 to 0.9 deg:
-  const sign = Math.random() < 0.5 ? -1 : 1
-  const degrees = sign * (0.5 + Math.random() * 0.4)
+  const degrees = state.rotationAngle
   const radians = degrees * Math.PI / 180
 
   // Create new canvas with padding to avoid clipping:

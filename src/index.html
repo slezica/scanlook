@@ -7,13 +7,29 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
-  <div id="drop-zone">
-    <div id="drop-zone-content">
-      <p>Drop PDF here or click to select</p>
+  <div id="app">
+    <div id="sidebar">
+      <h1>Scan Look</h1>
+
+      <div class="controls">
+        <div class="control-group">
+          <label for="rotation-slider">
+            Rotation: <span id="rotation-value">0</span>°
+          </label>
+          <input type="range" id="rotation-slider" min="-30" max="30" value="0" step="0.1">
+        </div>
+      </div>
+
+      <button id="download-btn" disabled>Download PDF</button>
       <input type="file" id="file-input" accept=".pdf,application/pdf" hidden>
     </div>
+    <div id="preview-area">
+      <div id="drop-zone-overlay">
+        <p>Drop PDF here or click to select</p>
+      </div>
+      <div id="preview-container"></div>
+    </div>
   </div>
-  <button id="download-btn" disabled>Download PDF</button>
   <script type="module" src="/main.js"></script>
 </body>
 </html>
