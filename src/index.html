@@ -11,6 +11,9 @@
     <div id="sidebar">
       <h1>Scan Look</h1>
 
+      <button id="open-btn">Open PDF</button>
+      <input type="file" id="file-input" accept=".pdf,application/pdf" hidden>
+
       <div class="controls">
         <div class="control-group">
           <label for="rotation-slider">
@@ -35,11 +38,10 @@
       </div>
 
       <button id="download-btn" disabled>Download PDF</button>
-      <input type="file" id="file-input" accept=".pdf,application/pdf" hidden>
     </div>
     <div id="preview-area">
       <div id="drop-zone-overlay">
-        <p>Drop PDF here or click to select</p>
+        <p>Drop PDF here</p>
       </div>
       <div id="preview-container"></div>
     </div>

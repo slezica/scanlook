@@ -37,6 +37,21 @@ html, body {
   margin-bottom: 8px;
 }
 
+#open-btn {
+  padding: 12px 20px;
+  background: #007aff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+#open-btn:hover {
+  background: #0051d5;
+}
+
 .controls {
   flex: 1;
   display: flex;

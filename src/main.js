@@ -17,6 +17,7 @@ const ui = {
   previewArea: document.getElementById('preview-area'),
   previewContainer: document.getElementById('preview-container'),
   fileInput: document.getElementById('file-input'),
+  openBtn: document.getElementById('open-btn'),
   downloadBtn: document.getElementById('download-btn'),
   rotationSlider: document.getElementById('rotation-slider'),
   rotationValue: document.getElementById('rotation-value'),
@@ -69,8 +70,8 @@ ui.sharpenSlider.addEventListener('input', ev => {
   debouncedUpdatePreviews()
 })
 
-// Click anywhere to select file
-ui.previewArea.addEventListener('click', () => {
+// Open button
+ui.openBtn.addEventListener('click', () => {
   ui.fileInput.click()
 })
 
