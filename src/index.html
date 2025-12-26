@@ -7,7 +7,17 @@
   <link rel="stylesheet" href="/style.css">
 </head>
 <body>
+  <input type="checkbox" id="sidebar-toggle" hidden>
+  <label for="sidebar-toggle" class="hamburger-btn">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </label>
+
   <div id="app">
+    <label for="sidebar-toggle" class="sidebar-backdrop"></label>
     <div id="sidebar">
       <div class="title">
         <h1>Scan Look</h1>
