@@ -130,6 +130,19 @@ async function handleFileSelected(file) {
 
 
 async function loadFile(file) {
+  state.rawPages = []
+
+  if (file.type === 'application/pdf') {
+    await loadPDF(file)
+  } else if (file.type.startsWith('image/')) {
+    await loadImage(file)
+  } else {
+    throw new Error('Unsupported file type')
+  }
+}
+
+
+async function loadPDF(file) {
   const fileBuffer = await file.arrayBuffer()
   const fileBytes = new Uint8Array(fileBuffer)
   const inputPdf = await pdfjs.getDocument({ data: fileBytes }).promise
@@ -137,8 +150,6 @@ async function loadFile(file) {
   if (inputPdf.numPages == 0) {
     throw new Error("Zero pages in PDF")
   }
-
-  state.rawPages = []
 
   for (let i = 0; i < inputPdf.numPages; i++) {
     const page = await inputPdf.getPage(i + 1)
@@ -157,6 +168,41 @@ async function loadFile(file) {
       baseHeight: page.getViewport({ scale: 1.0 }).height
     })
   }
+}
+
+
+async function loadImage(file) {
+  return new Promise((resolve, reject) => {
+    const img = new Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      // Render at 4x scale like PDFs
+      const scale = 4.0
+      const canvas = document.createElement('canvas')
+      const context = canvas.getContext('2d')
+      canvas.width = img.width * scale
+      canvas.height = img.height * scale
+
+      context.drawImage(img, 0, 0, canvas.width, canvas.height)
+
+      state.rawPages.push({
+        canvas: canvas,
+        baseWidth: img.width,
+        baseHeight: img.height
+      })
+
+      URL.revokeObjectURL(objectUrl)
+      resolve()
+    }
+
+    img.onerror = () => {
+      URL.revokeObjectURL(objectUrl)
+      reject(new Error('Failed to load image'))
+    }
+
+    img.src = objectUrl
+  })
 }
 
 
