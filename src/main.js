@@ -115,15 +115,16 @@ ui.downloadBtn.addEventListener('click', async () => {
 
 
 async function handleFileSelected(file) {
-  state.file = file
+  state.file = null
   ui.downloadBtn.disabled = true
+  ui.previewArea.classList.remove('has-content')
 
   if (file) {
-    ui.previewArea.classList.add('has-content')
     await loadFile(file)
-    initializePreviewDOM()
-    updatePreviews()
     ui.downloadBtn.disabled = false
+    ui.previewArea.classList.add('has-content')
+    initializePreviews()
+    updatePreviews()
   }
 }
 
@@ -159,7 +160,7 @@ async function loadFile(file) {
 }
 
 
-function initializePreviewDOM() {
+function initializePreviews() {
   ui.previewContainer.innerHTML = ''
 
   for (let i = 0; i < state.rawPages.length; i++) {
