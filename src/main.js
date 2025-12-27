@@ -76,8 +76,8 @@ ui.openBtn.addEventListener('click', () => {
 })
 
 // Click drop zone to select file (only when no file loaded)
-ui.previewArea.addEventListener('click', () => {
-  if (state.file === null) {
+ui.previewArea.addEventListener('click', (ev) => {
+  if (ev.target.tagName != 'IMG') {
     ui.fileInput.click()
   }
 })
