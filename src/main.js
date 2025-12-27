@@ -101,8 +101,12 @@ ui.fileInput.addEventListener('change', ev => {
 
 ui.downloadBtn.addEventListener('click', async () => {
   if (state.rawPages.length === 0) return
-  const outputPdf = await generatePdf()
-  outputPdf.save('processed.pdf')
+  try {
+    const outputPdf = await generatePdf()
+    outputPdf.save('processed.pdf')
+  } catch (error) {
+    addError('Failed to generate PDF: ' + (error.message || 'Unknown error'))
+  }
 })
 
 
@@ -112,11 +116,15 @@ async function handleFileSelected(file) {
   ui.previewArea.classList.remove('has-content')
 
   if (file) {
-    await loadFile(file)
-    ui.downloadBtn.disabled = false
-    ui.previewArea.classList.add('has-content')
-    initializePreviews()
-    updatePreviews()
+    try {
+      await loadFile(file)
+      ui.downloadBtn.disabled = false
+      ui.previewArea.classList.add('has-content')
+      initializePreviews()
+      updatePreviews()
+    } catch (error) {
+      addError(error.message || 'Failed to load file')
+    }
   }
 }
 
@@ -422,3 +430,55 @@ function debounce(func, delay) {
     timeoutId = setTimeout(() => func.apply(this, args), delay)
   }
 }
+
+
+// -------------------------------------------------------------------------------------------------
+// Notification system
+
+const notificationContainer = document.getElementById('notification-container')
+
+export function addError(message) {
+  const notification = document.createElement('div')
+  notification.className = 'notification'
+
+  const messageEl = document.createElement('div')
+  messageEl.className = 'notification-message'
+  messageEl.textContent = message
+
+  const closeBtn = document.createElement('button')
+  closeBtn.className = 'notification-close'
+  closeBtn.setAttribute('aria-label', 'Dismiss')
+  closeBtn.innerHTML = `
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+      <line x1="18" y1="6" x2="6" y2="18"></line>
+      <line x1="6" y1="6" x2="18" y2="18"></line>
+    </svg>
+  `
+
+  closeBtn.addEventListener('click', () => {
+    removeNotification(notification)
+  })
+
+  notification.appendChild(messageEl)
+  notification.appendChild(closeBtn)
+  notificationContainer.appendChild(notification)
+
+  // Auto-dismiss after 8 seconds
+  setTimeout(() => {
+    if (notification.parentElement) {
+      removeNotification(notification)
+    }
+  }, 8000)
+
+  return notification
+}
+
+function removeNotification(notification) {
+  notification.classList.add('removing')
+  setTimeout(() => {
+    notification.remove()
+  }, 200)
+}
+
+// Make addError globally available
+window.addError = addError
