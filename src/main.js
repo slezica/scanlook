@@ -53,7 +53,7 @@ ui.rotationSlider.addEventListener('input', ev => {
 // Noise slider
 ui.noiseSlider.addEventListener('input', ev => {
   const value = parseFloat(ev.target.value)
-  ui.noiseValue.textContent = value.toFixed(3)
+  ui.noiseValue.textContent = value.toFixed(1)
   
   state.noise = 0.2 * value
 
