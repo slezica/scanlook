@@ -5,6 +5,9 @@ pdfjs.GlobalWorkerOptions.workerSrc =
   "https://cdn.jsdelivr.net/npm/pdfjs-dist@5.4.449/build/pdf.worker.min.mjs"
 
 
+// -------------------------------------------------------------------------------------------------
+// State
+
 const state = {
   file: null,
   rawPages: [],
@@ -28,13 +31,8 @@ const ui = {
 }
 
 
-function debounce(func, delay) {
-  let timeoutId
-  return function(...args) {
-    clearTimeout(timeoutId)
-    timeoutId = setTimeout(() => func.apply(this, args), delay)
-  }
-}
+// -------------------------------------------------------------------------------------------------
+// Handlers
 
 const debouncedUpdatePreviews = debounce(() => {
   if (state.rawPages.length > 0) {
@@ -43,14 +41,12 @@ const debouncedUpdatePreviews = debounce(() => {
 }, 300)
 
 
-// Rotation slider
 ui.rotationSlider.addEventListener('input', ev => {
   state.rotationAngle = parseFloat(ev.target.value)
   ui.rotationValue.textContent = state.rotationAngle.toFixed(1)
   debouncedUpdatePreviews()
 })
 
-// Noise slider
 ui.noiseSlider.addEventListener('input', ev => {
   const value = parseFloat(ev.target.value)
   ui.noiseValue.textContent = value.toFixed(1)
@@ -60,7 +56,6 @@ ui.noiseSlider.addEventListener('input', ev => {
   debouncedUpdatePreviews()
 })
 
-// Sharpen slider
 ui.sharpenSlider.addEventListener('input', ev => {
   const sharpen = parseFloat(ev.target.value)
   ui.sharpenValue.textContent = sharpen.toFixed(1)
@@ -70,19 +65,16 @@ ui.sharpenSlider.addEventListener('input', ev => {
   debouncedUpdatePreviews()
 })
 
-// Open button
 ui.openBtn.addEventListener('click', () => {
   ui.fileInput.click()
 })
 
-// Click drop zone to select file (only when no file loaded)
 ui.previewArea.addEventListener('click', (ev) => {
   if (ev.target.tagName != 'IMG') {
     ui.fileInput.click()
   }
 })
 
-// Drag and drop
 ui.previewArea.addEventListener('dragover', ev => {
   ev.preventDefault()
   ui.previewArea.classList.add('drag-over')
@@ -109,7 +101,7 @@ ui.fileInput.addEventListener('change', ev => {
 
 ui.downloadBtn.addEventListener('click', async () => {
   if (state.rawPages.length === 0) return
-  const outputPdf = await generateDownloadPdf()
+  const outputPdf = await generatePdf()
   outputPdf.save('processed.pdf')
 })
 
@@ -128,6 +120,9 @@ async function handleFileSelected(file) {
   }
 }
 
+
+// -------------------------------------------------------------------------------------------------
+// File operations
 
 async function loadFile(file) {
   state.rawPages = []
@@ -250,7 +245,7 @@ function createPreviewCanvas(sourceCanvas) {
 }
 
 
-async function generateDownloadPdf() {
+async function generatePdf() {
   let outputPdf
 
   for (let i = 0; i < state.rawPages.length; i++) {
@@ -278,6 +273,9 @@ async function generateDownloadPdf() {
   return outputPdf
 }
 
+
+// -------------------------------------------------------------------------------------------------
+// Image operations
 
 function cloneCanvas(sourceCanvas) {
   const canvas = document.createElement('canvas')
@@ -357,17 +355,16 @@ function applySharpen(canvas, amount) {
   const w = canvas.width
   const h = canvas.height
 
-  // Scale kernel by amount
   const kernel = [
-     0,          -1 * amount,  0,
-    -1 * amount,  1 + 4 * amount, -1 * amount,
-     0,          -1 * amount,  0
+     0,          -1 * amount,      0,
+    -1 * amount,  4 * amount + 1, -1 * amount,
+     0,          -1 * amount,      0
   ]
 
   const output = new Uint8ClampedArray(data.length)
 
   // NOTE:
-  // If the code below has problems, blame Claude.
+  // The code below is blindly copied. Maybe it just happens to work.
 
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
@@ -414,3 +411,14 @@ function applyGrayscale(canvas) {
   ctx.putImageData(imageData, 0, 0)
 }
 
+
+// -------------------------------------------------------------------------------------------------
+// Utilities
+
+function debounce(func, delay) {
+  let timeoutId
+  return function(...args) {
+    clearTimeout(timeoutId)
+    timeoutId = setTimeout(() => func.apply(this, args), delay)
+  }
+}
